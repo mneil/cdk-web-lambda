@@ -25,9 +25,9 @@ module.exports = {
       util: require.resolve("util/"),
       path: require.resolve("path-browserify"),
       stream: require.resolve("stream-browserify"),
+      os: require.resolve("os-browserify/browser"),
 
       // url: require.resolve("url/"),
-      // os: require.resolve("os-browserify/browser"),
       // crypto: require.resolve("crypto-browserify"),
       // buffer: require.resolve("buffer/"),
     },

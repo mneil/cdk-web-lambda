@@ -3,25 +3,20 @@
 // for nodejs, you can require(".../index.js") of this package as usual.
 
 const CDK = require("cdk-web");
-const fs = require("fs");
-const path = require("path");
+const fs = CDK.require("fs");
+const path = CDK.require("path");
 const lambda = CDK.require("aws-cdk-lib/aws-lambda");
-import { Bundling } from "./bundling";
+const { Bundling } = require("./bundling");
 const { LockFile } = require("./package-manager");
-// import { BundlingOptions } from './types';
 const { callsites, findUpMultiple } = require("./util");
 
 class WebLambda extends lambda.Function {
   constructor(scope, id, props) {
-    // if (props.runtime && props.runtime.family !== lambda.RuntimeFamily.NODEJS) {
-    //   throw new Error('Only `NODEJS` runtimes are supported.');
-    // }
-
     // Entry and defaults
     const entry = path.resolve(findEntry(id, props.entry));
     // const entry = props.entry || "/app/lambda/index.js";
     const handler = props.handler || "handler";
-    const runtime = props.runtime || lambda.Runtime.NODEJS_14_X;
+    const runtime = lambda.Runtime.NODEJS_14_X;
     const architecture = props.architecture || lambda.Architecture.X86_64;
     const depsLockFilePath = findLockFile(props.depsLockFilePath);
     const projectRoot = props.projectRoot || path.dirname(depsLockFilePath);
@@ -30,6 +25,7 @@ class WebLambda extends lambda.Function {
       ...props,
       runtime,
       code: Bundling.bundle({
+        // assetHash: "abc",
         ...(props.bundling || {}),
         entry,
         runtime,

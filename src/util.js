@@ -1,5 +1,6 @@
-const fs = require("fs");
-const path = require("path");
+const CDK = require("cdk-web");
+const fs = CDK.require("fs");
+const path = CDK.require("path");
 
 /**
  * Get callsites from the V8 stack trace API
@@ -39,4 +40,13 @@ export function findUpMultiple(names, directory = process.cwd()) {
   }
 
   return findUpMultiple(names, path.dirname(absoluteDirectory));
+}
+
+export function tryGetModuleVersionFromRequire(mod) {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    return require(`${mod}/package.json`).version;
+  } catch (err) {
+    return undefined;
+  }
 }
