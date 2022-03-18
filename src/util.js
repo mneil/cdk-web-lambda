@@ -1,6 +1,6 @@
 const CDK = require("cdk-web");
 const fs = CDK.require("fs");
-const path = CDK.require("path");
+const path = require("path");
 
 /**
  * Get callsites from the V8 stack trace API

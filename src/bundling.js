@@ -3,15 +3,6 @@ const path = CDK.require("path");
 const fs = CDK.require("fs");
 const cdk = CDK.require("aws-cdk-lib");
 const { WebAsset } = require("./asset");
-// const { Code } = CDK.require("aws-cdk-lib/aws-lambda");
-
-// const ESBUILD_MAJOR_VERSION = "0";
-
-// const orgSync = fs.ensureDirSync;
-// fs.ensureDirSync = function (dir) {
-//   debugger;
-//   return orgSync(dir);
-// };
 
 class Bundling {
   /**
@@ -40,15 +31,17 @@ class Bundling {
   workingDirectory;
 
   constructor(props) {
-    this.props = props;
-
+    //this.props = props;
+    // if (!props.esbuild) {
+    //   throw new Error("esbuild required for asset bundling");
+    // }
     // Docker bundling
     this.image = new cdk.DockerImage("noop");
-    this.local = this.getLocalBundlingProvider();
+    this.local = this.getLocalBundlingProvider(props.esbuild);
     this.outputType = cdk.BundlingOutput.ARCHIVED;
   }
 
-  getLocalBundlingProvider() {
+  getLocalBundlingProvider(esbuild) {
     // const osPlatform = os.platform();
     // const createLocalCommand = (outputDir, esbuild, tsc) =>
     //   this.createBundlingCommand({
@@ -67,8 +60,20 @@ class Bundling {
 
     return {
       tryBundle(outputDir, options) {
-        console.log("TRYING TO BUNDLE");
+        console.log("TRYING TO BUNDLE", esbuild);
         fs.writeFileSync(path.resolve(outputDir, "out.zip"));
+        esbuild
+          .build({ entryPoints: ["/app/lambda/index.js"], outdir: outputDir })
+          .then(console.log);
+        // esbuild
+        //   .initialize({
+        //     wasmURL: "/esbuild.wasm",
+        //   })
+        //   .then(() => {
+        //     console.log("loaded the bundle");
+        //     // esbuild.transform(code, options).then(result => { ... })
+        //     // esbuild.build(options).then(result => { ... })
+        //   });
         // if (!Bundling.esbuildInstallation) {
         //   process.stderr.write(
         //     "esbuild cannot run locally. Switching to Docker bundling.\n"

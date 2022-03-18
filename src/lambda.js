@@ -20,11 +20,14 @@ class WebLambda extends lambda.Function {
     const architecture = props.architecture || lambda.Architecture.X86_64;
     const depsLockFilePath = findLockFile(props.depsLockFilePath);
     const projectRoot = props.projectRoot || path.dirname(depsLockFilePath);
+    const esbuild = props.esbuild;
+    delete props.esbuild;
 
     super(scope, id, {
       ...props,
       runtime,
       code: Bundling.bundle({
+        esbuild,
         // assetHash: "abc",
         ...(props.bundling || {}),
         entry,
