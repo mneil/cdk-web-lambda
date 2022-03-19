@@ -1,9 +1,8 @@
 const CDK = require("cdk-web");
 const path = CDK.require("path");
-const fs = CDK.require("fs");
 const cdk = CDK.require("aws-cdk-lib");
+const { fs } = require("./fs");
 const { EsBuild } = require("./esbuild");
-const workerFile = require("!raw-loader!./bundle-worker.js");
 const { WebAsset } = require("./asset");
 
 class Bundling {
@@ -39,26 +38,28 @@ class Bundling {
     // Docker bundling
     this.image = new cdk.DockerImage("noop");
     this.outputType = cdk.BundlingOutput.ARCHIVED;
-    this.local = this.getLocalBundlingProvider();
   }
 
   async init() {
     fs.mkdirSync("/tmp/web-bundle", { recursive: true });
     this._stageDir = fs.mkdtempSync("/tmp/web-bundle/");
-    await new Promise((resolve, reject) => {
-      const esbuild = new EsBuild();
-      esbuild.load().then(() => {
-        esbuild
-          .build({
-            entryPoints: ["/app/lambda/index.js"],
-            outdir: this._stageDir,
-          })
-          .then(() => {
-            console.log("bundled");
-            resolve();
-          });
-      });
+    console.log(
+      "index contents",
+      fs.readFileSync("/app/lambda/index.js", { encoding: "utf8" })
+    );
+    const esbuild = new EsBuild();
+    await esbuild.load();
+    await esbuild.build({
+      entryPoints: ["/app/lambda/index.js"],
+      outdir: this._stageDir,
     });
+    console.log("bundled");
+    console.log("staged directory", fs.readdirSync(this._stageDir));
+    console.log(
+      "built contents",
+      fs.readFileSync(this._stageDir + "/index.js", { encoding: "utf8" })
+    );
+    this.local = this.getLocalBundlingProvider();
   }
 
   getLocalBundlingProvider() {
@@ -77,10 +78,9 @@ class Bundling {
     //   });
     // const environment = this.props.environment || {};
     // const cwd = this.projectRoot;
-
     return {
-      tryBundle(outputDir, options) {
-        console.log("TRYING TO BUNDLE");
+      tryBundle: (outputDir, options) => {
+        console.log("CDK Bundle");
         fs.writeFileSync(path.resolve(outputDir, "out.zip"));
 
         // TODO: Copy files over

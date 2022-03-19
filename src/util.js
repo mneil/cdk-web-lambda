@@ -1,5 +1,5 @@
 const CDK = require("cdk-web");
-const fs = CDK.require("fs");
+const { fs } = require("./fs");
 const path = require("path");
 
 /**

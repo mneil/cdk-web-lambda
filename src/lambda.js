@@ -3,9 +3,9 @@
 // for nodejs, you can require(".../index.js") of this package as usual.
 
 const CDK = require("cdk-web");
-const fs = CDK.require("fs");
 const path = CDK.require("path");
 const lambda = CDK.require("aws-cdk-lib/aws-lambda");
+const { fs } = require("./fs");
 const { Bundling } = require("./bundling");
 const { LockFile } = require("./package-manager");
 const { callsites, findUpMultiple } = require("./util");
