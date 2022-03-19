@@ -11,31 +11,38 @@ const { LockFile } = require("./package-manager");
 const { callsites, findUpMultiple } = require("./util");
 
 class WebLambda extends lambda.Function {
-  constructor(scope, id, props) {
+  static async fromWeb(scope, id, props) {
     // Entry and defaults
     const entry = path.resolve(findEntry(id, props.entry));
     // const entry = props.entry || "/app/lambda/index.js";
-    const handler = props.handler || "handler";
-    const runtime = lambda.Runtime.NODEJS_14_X;
     const architecture = props.architecture || lambda.Architecture.X86_64;
     const depsLockFilePath = findLockFile(props.depsLockFilePath);
     const projectRoot = props.projectRoot || path.dirname(depsLockFilePath);
-    const esbuild = props.esbuild;
-    delete props.esbuild;
+
+    props.handler = props.handler || "handler";
+    props.runtime = lambda.Runtime.NODEJS_14_X;
+    props.code = await Bundling.bundle({
+      // assetHash: "abc",
+      ...(props.bundling || {}),
+      entry,
+      runtime: props.runtime,
+      architecture,
+      depsLockFilePath,
+      projectRoot,
+    });
+
+    return new WebLambda(scope, id, props);
+  }
+
+  constructor(scope, id, props) {
+    // Entry and defaults
+    const handler = props.handler || "handler";
+    const runtime = props.runtime || lambda.Runtime.NODEJS_14_X;
 
     super(scope, id, {
       ...props,
       runtime,
-      code: Bundling.bundle({
-        esbuild,
-        // assetHash: "abc",
-        ...(props.bundling || {}),
-        entry,
-        runtime,
-        architecture,
-        depsLockFilePath,
-        projectRoot,
-      }),
+      code: props.code,
       handler: `index.${handler}`,
     });
 

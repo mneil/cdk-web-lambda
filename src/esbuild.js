@@ -1,5 +1,5 @@
 // this causes the actual Go/WASM vm to be created and initialized
-import "./wasm_exec";
+require("./wasm_exec");
 const CDK = require("cdk-web");
 global.fs = CDK.require("fs");
 

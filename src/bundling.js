@@ -2,6 +2,8 @@ const CDK = require("cdk-web");
 const path = CDK.require("path");
 const fs = CDK.require("fs");
 const cdk = CDK.require("aws-cdk-lib");
+const { EsBuild } = require("./esbuild");
+const workerFile = require("!raw-loader!./bundle-worker.js");
 const { WebAsset } = require("./asset");
 
 class Bundling {
@@ -10,16 +12,19 @@ class Bundling {
    *
    * @param {(AssetOptions | BundlingOptions)} options
    */
-  static bundle(options) {
+  static async bundle(options) {
+    const bundling = new Bundling(options);
+    await bundling.init();
     return new WebAsset(options.projectRoot, {
       assetHash: options.assetHash,
       assetHashType: options.assetHash
         ? cdk.AssetHashType.CUSTOM
         : cdk.AssetHashType.OUTPUT,
-      bundling: new Bundling(options),
+      bundling,
     });
   }
 
+  _stageDir;
   image;
   command;
   entrypoint;
@@ -31,17 +36,32 @@ class Bundling {
   workingDirectory;
 
   constructor(props) {
-    //this.props = props;
-    // if (!props.esbuild) {
-    //   throw new Error("esbuild required for asset bundling");
-    // }
     // Docker bundling
     this.image = new cdk.DockerImage("noop");
-    this.local = this.getLocalBundlingProvider(props.esbuild);
     this.outputType = cdk.BundlingOutput.ARCHIVED;
+    this.local = this.getLocalBundlingProvider();
   }
 
-  getLocalBundlingProvider(esbuild) {
+  async init() {
+    fs.mkdirSync("/tmp/web-bundle", { recursive: true });
+    this._stageDir = fs.mkdtempSync("/tmp/web-bundle/");
+    await new Promise((resolve, reject) => {
+      const esbuild = new EsBuild();
+      esbuild.load().then(() => {
+        esbuild
+          .build({
+            entryPoints: ["/app/lambda/index.js"],
+            outdir: this._stageDir,
+          })
+          .then(() => {
+            console.log("bundled");
+            resolve();
+          });
+      });
+    });
+  }
+
+  getLocalBundlingProvider() {
     // const osPlatform = os.platform();
     // const createLocalCommand = (outputDir, esbuild, tsc) =>
     //   this.createBundlingCommand({
@@ -60,11 +80,11 @@ class Bundling {
 
     return {
       tryBundle(outputDir, options) {
-        console.log("TRYING TO BUNDLE", esbuild);
+        console.log("TRYING TO BUNDLE");
         fs.writeFileSync(path.resolve(outputDir, "out.zip"));
-        esbuild
-          .build({ entryPoints: ["/app/lambda/index.js"], outdir: outputDir })
-          .then(console.log);
+
+        // TODO: Copy files over
+
         // esbuild
         //   .initialize({
         //     wasmURL: "/esbuild.wasm",

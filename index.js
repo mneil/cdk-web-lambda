@@ -4,10 +4,7 @@ if (window && !window.process) {
 const CDK = require("cdk-web");
 const fs = CDK.require("fs");
 const cdk = CDK.require("aws-cdk-lib");
-const { WebLambda } = require("./src/lambda");
-// const esbuild = require("./src/esbuild");
-const { EsBuild } = require("./src/esbuild");
-require("./src/wasm_exec");
+const { WebLambda } = require("./src");
 
 const app = new cdk.App();
 const stack = new cdk.Stack(app, "BrowserStack");
@@ -32,27 +29,13 @@ fs.writeFileSync("/app/lambda/index.js", code);
 fs.writeFileSync("/package-lock.json", JSON.stringify(packageLock));
 fs.writeFileSync("/package.json", JSON.stringify(package));
 
-const esbuild = new EsBuild();
-esbuild.load().then(() => {
-  new WebLambda(stack, "Lambda", {
-    esbuild,
+// have to build the lambda
+
+async function synth() {
+  await WebLambda.fromWeb(stack, "Lambda", {
     entry: "/app/lambda/index.js",
   });
-
   const assembly = app.synth();
   console.log(assembly.getStackArtifact("BrowserStack").template);
-});
-
-// esbuild
-//   .initialize({
-//     wasmURL: "/esbuild.wasm",
-//   })
-//   .then(() => {
-//     new WebLambda(stack, "Lambda", {
-//       esbuild,
-//       entry: "/app/lambda/index.js",
-//     });
-
-//     const assembly = app.synth();
-//     console.log(assembly.getStackArtifact("BrowserStack").template);
-//   });
+}
+synth();
