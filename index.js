@@ -14,8 +14,8 @@ export const lib = 'some value'
 `;
 
 const code = `\
-import * as lib from './lib';
-function handler(event, context) {
+const lib = require('./lib');
+module.exports = function handler(event, context) {
   console.log(event, lib);
 }
 `;
@@ -32,11 +32,12 @@ const packageLock = {
 // have to build the lambda
 
 async function synth() {
+  process.cwd = () => "/app";
   fs.mkdirSync("/app/lambda", { recursive: true });
   fs.writeFileSync("/app/lambda/lib.js", lib);
   fs.writeFileSync("/app/lambda/index.js", code);
-  fs.writeFileSync("/package-lock.json", JSON.stringify(packageLock));
-  fs.writeFileSync("/package.json", JSON.stringify(package));
+  fs.writeFileSync("/app/package-lock.json", JSON.stringify(packageLock));
+  fs.writeFileSync("/app/package.json", JSON.stringify(package));
 
   await WebLambda.fromWeb(stack, "Lambda", {
     entry: "/app/lambda/index.js",

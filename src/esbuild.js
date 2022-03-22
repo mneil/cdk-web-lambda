@@ -40,9 +40,9 @@ try {
       return await this.command([
         ...args.entryPoints,
         `--outdir=${args.outdir}`,
-        // "--bundle",
-        // "--minify",
-        // "--sourcemap=inline",
+        ...(args.bundle ? ["--bundle"] : []), // "--bundle",
+        ...(args.minify ? ["--minify"] : []), // "--minify",
+        ...(args.sourcemap ? [`--sourcemap=${args.sourcemap}`] : []), // "--sourcemap=inline",
       ]);
     }
   }

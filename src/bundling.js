@@ -38,27 +38,19 @@ class Bundling {
     // Docker bundling
     this.image = new cdk.DockerImage("noop");
     this.outputType = cdk.BundlingOutput.ARCHIVED;
+    this.entrypoint = props.entry;
   }
 
   async init() {
     fs.mkdirSync("/tmp/web-bundle", { recursive: true });
     this._stageDir = fs.mkdtempSync("/tmp/web-bundle/");
-    console.log(
-      "index contents",
-      fs.readFileSync("/app/lambda/index.js", { encoding: "utf8" })
-    );
     const esbuild = new EsBuild();
     await esbuild.load();
     await esbuild.build({
-      entryPoints: ["/app/lambda/index.js"],
+      entryPoints: [this.entrypoint],
       outdir: this._stageDir,
+      bundle: true,
     });
-    console.log("bundled");
-    console.log("staged directory", fs.readdirSync(this._stageDir));
-    console.log(
-      "built contents",
-      fs.readFileSync(this._stageDir + "/index.js", { encoding: "utf8" })
-    );
     this.local = this.getLocalBundlingProvider();
   }
 
@@ -82,6 +74,10 @@ class Bundling {
       tryBundle: (outputDir, options) => {
         console.log("CDK Bundle");
         fs.writeFileSync(path.resolve(outputDir, "out.zip"));
+        console.log(
+          "bundled file",
+          fs.readFileSync(this._stageDir + "/index.js", { encoding: "utf8" })
+        );
 
         // TODO: Copy files over
 
