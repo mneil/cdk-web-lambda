@@ -1,6 +1,6 @@
 const CDK = require("cdk-web");
-const fs = CDK.require("fs");
 const cdk = CDK.require("aws-cdk-lib");
+const { fs } = require("./fs");
 const { AssetCode } = CDK.require("aws-cdk-lib/aws-lambda");
 
 cdk.AssetStaging.prototype.bundle = function bundle(options, bundleDir) {

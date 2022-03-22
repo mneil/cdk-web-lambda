@@ -2,19 +2,21 @@ if (window && !window.process) {
   window.process = require("process");
 }
 const CDK = require("cdk-web");
-const fs = CDK.require("fs");
+// const fs = CDK.require("fs");
+const { fs } = require("./src/fs");
 const cdk = CDK.require("aws-cdk-lib");
-const { WebLambda } = require("./src/lambda");
-// const esbuild = require("./src/esbuild");
-const { EsBuild } = require("./src/esbuild");
-require("./src/wasm_exec");
-
+const { WebLambda } = require("./src");
 const app = new cdk.App();
 const stack = new cdk.Stack(app, "BrowserStack");
 
+const lib = `\
+export const lib = 'some value'
+`;
+
 const code = `\
-function handler(event, context) {
-  console.log(event);
+const lib = require('./lib');
+module.exports = function handler(event, context) {
+  console.log(event, lib);
 }
 `;
 
@@ -27,32 +29,20 @@ const packageLock = {
   packages: {},
 };
 
-fs.mkdirSync("/app/lambda", { recursive: true });
-fs.writeFileSync("/app/lambda/index.js", code);
-fs.writeFileSync("/package-lock.json", JSON.stringify(packageLock));
-fs.writeFileSync("/package.json", JSON.stringify(package));
+// have to build the lambda
 
-const esbuild = new EsBuild();
-esbuild.load().then(() => {
-  new WebLambda(stack, "Lambda", {
-    esbuild,
+async function synth() {
+  process.cwd = () => "/app";
+  fs.mkdirSync("/app/lambda", { recursive: true });
+  fs.writeFileSync("/app/lambda/lib.js", lib);
+  fs.writeFileSync("/app/lambda/index.js", code);
+  fs.writeFileSync("/app/package-lock.json", JSON.stringify(packageLock));
+  fs.writeFileSync("/app/package.json", JSON.stringify(package));
+
+  await WebLambda.fromWeb(stack, "Lambda", {
     entry: "/app/lambda/index.js",
   });
-
   const assembly = app.synth();
   console.log(assembly.getStackArtifact("BrowserStack").template);
-});
-
-// esbuild
-//   .initialize({
-//     wasmURL: "/esbuild.wasm",
-//   })
-//   .then(() => {
-//     new WebLambda(stack, "Lambda", {
-//       esbuild,
-//       entry: "/app/lambda/index.js",
-//     });
-
-//     const assembly = app.synth();
-//     console.log(assembly.getStackArtifact("BrowserStack").template);
-//   });
+}
+synth();
