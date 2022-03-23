@@ -1,5 +1,4 @@
 const CDK = require("cdk-web");
-const path = CDK.require("path");
 const cdk = CDK.require("aws-cdk-lib");
 const { fs } = require("./fs");
 const { EsBuild } = require("./esbuild");
@@ -23,7 +22,7 @@ class Bundling {
     });
   }
 
-  _stageDir;
+  _archive;
   image;
   command;
   entrypoint;
@@ -42,97 +41,48 @@ class Bundling {
   }
 
   async init() {
-    fs.mkdirSync("/tmp/web-bundle", { recursive: true });
-    this._stageDir = fs.mkdtempSync("/tmp/web-bundle/");
+    fs.mkdirSync("/tmp/web-bundle/source", { recursive: true });
+    fs.mkdirSync("/tmp/web-bundle/dist", { recursive: true });
+    const bundleOut = fs.mkdtempSync("/tmp/web-bundle/source/");
+    const archiveDir = fs.mkdtempSync("/tmp/web-bundle/dist/");
     const esbuild = new EsBuild();
     await esbuild.load();
     await esbuild.build({
       entryPoints: [this.entrypoint],
-      outdir: this._stageDir,
+      outdir: bundleOut,
       bundle: true,
     });
+    this._archive = await archivePackage(bundleOut, archiveDir);
     this.local = this.getLocalBundlingProvider();
   }
 
   getLocalBundlingProvider() {
-    // const osPlatform = os.platform();
-    // const createLocalCommand = (outputDir, esbuild, tsc) =>
-    //   this.createBundlingCommand({
-    //     inputDir: this.projectRoot,
-    //     outputDir,
-    //     esbuildRunner: esbuild.isLocal
-    //       ? this.packageManager.runBinCommand("esbuild")
-    //       : "esbuild",
-    //     tscRunner:
-    //       tsc &&
-    //       (tsc.isLocal ? this.packageManager.runBinCommand("tsc") : "tsc"),
-    //     osPlatform,
-    //   });
-    // const environment = this.props.environment || {};
-    // const cwd = this.projectRoot;
     return {
-      tryBundle: (outputDir, options) => {
-        console.log("CDK Bundle");
-        fs.writeFileSync(path.resolve(outputDir, "out.zip"));
-        console.log(
-          "bundled file",
-          fs.readFileSync(this._stageDir + "/index.js", { encoding: "utf8" })
-        );
-
-        // TODO: Copy files over
-
-        // esbuild
-        //   .initialize({
-        //     wasmURL: "/esbuild.wasm",
-        //   })
-        //   .then(() => {
-        //     console.log("loaded the bundle");
-        //     // esbuild.transform(code, options).then(result => { ... })
-        //     // esbuild.build(options).then(result => { ... })
-        //   });
-        // if (!Bundling.esbuildInstallation) {
-        //   process.stderr.write(
-        //     "esbuild cannot run locally. Switching to Docker bundling.\n"
-        //   );
-        //   return false;
-        // }
-
-        // if (
-        //   !Bundling.esbuildInstallation.version.startsWith(
-        //     `${ESBUILD_MAJOR_VERSION}.`
-        //   )
-        // ) {
-        //   throw new Error(
-        //     `Expected esbuild version ${ESBUILD_MAJOR_VERSION}.x but got ${Bundling.esbuildInstallation.version}`
-        //   );
-        // }
-
-        // const localCommand = createLocalCommand(
-        //   outputDir,
-        //   Bundling.esbuildInstallation,
-        //   Bundling.tscInstallation
-        // );
-
-        // exec(
-        //   osPlatform === "win32" ? "cmd" : "bash",
-        //   [osPlatform === "win32" ? "/c" : "-c", localCommand],
-        //   {
-        //     env: { ...process.env, ...environment },
-        //     stdio: [
-        //       // show output
-        //       "ignore", // ignore stdio
-        //       process.stderr, // redirect stdout to stderr
-        //       "inherit", // inherit stderr
-        //     ],
-        //     cwd,
-        //     windowsVerbatimArguments: osPlatform === "win32",
-        //   }
-        // );
-
+      tryBundle: (outputDir, _) => {
+        fs.renameSync(this._archive, `${outputDir}/bundle.zip`);
         return true;
       },
     };
   }
+}
+/**
+ *
+ * @param {string} source - Absolute path to the source files to archive
+ * @param {string} outDir - Absolute path to a directory to build the archive into
+ */
+async function archivePackage(source, outDir) {
+  const outFile = `${outDir}/out.zip`;
+  const JSZip = require("jszip");
+  var zip = new JSZip();
+
+  const sources = fs.readdirSync(source);
+  for (name of sources) {
+    const contents = fs.readFileSync(`${source}/${name}`, { encoding: "utf8" });
+    zip.file(name, contents);
+  }
+  const content = await zip.generateAsync({ type: "blob" });
+  fs.writeFileSync(outFile, content);
+  return outFile;
 }
 
 module.exports = {
