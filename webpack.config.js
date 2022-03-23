@@ -1,3 +1,4 @@
+const webpack = require("webpack");
 const path = require("path");
 
 module.exports = {
@@ -27,9 +28,7 @@ module.exports = {
       stream: require.resolve("stream-browserify"),
       os: require.resolve("os-browserify/browser"),
       crypto: require.resolve("crypto-browserify"),
-      // tty: require.resolve("tty-browserify"),
-      // url: require.resolve("url/"),
-      // buffer: require.resolve("buffer/"),
+      zlib: require.resolve("browserify-zlib"),
     },
   },
   devServer: {
