@@ -2,7 +2,6 @@ if (window && !window.process) {
   window.process = require("process");
 }
 const CDK = require("cdk-web");
-// const fs = CDK.require("fs");
 const { fs } = require("./src/fs");
 const cdk = CDK.require("aws-cdk-lib");
 const { WebLambda } = require("./src");
@@ -20,7 +19,7 @@ module.exports = function handler(event, context) {
 }
 `;
 
-const package = {};
+const packageJson = {};
 const packageLock = {
   name: "sample-web-construct",
   version: "1.0.0",
@@ -37,7 +36,7 @@ async function synth() {
   fs.writeFileSync("/app/lambda/lib.js", lib);
   fs.writeFileSync("/app/lambda/index.js", code);
   fs.writeFileSync("/app/package-lock.json", JSON.stringify(packageLock));
-  fs.writeFileSync("/app/package.json", JSON.stringify(package));
+  fs.writeFileSync("/app/package.json", JSON.stringify(packageJson));
 
   await WebLambda.fromWeb(stack, "Lambda", {
     entry: "/app/lambda/index.js",

@@ -2,13 +2,12 @@
 require("./go-wasm");
 
 class EsBuild extends Go {
-  wasm;
-  workDir = "/app";
-  user = "esbuild";
-  homeDir = "/home/esbuild";
-
   constructor() {
     super();
+    this.wasm = undefined;
+    this.workDir = "/app";
+    this.user = "esbuild";
+    this.homeDir = "/home/esbuild";
     this.env.USER = this.user;
     this.env.HOME = this.homeDir;
     process.cwd = () => this.workDir;

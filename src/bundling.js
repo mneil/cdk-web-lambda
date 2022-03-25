@@ -22,19 +22,16 @@ class Bundling {
     });
   }
 
-  _archive;
-  image;
-  command;
-  entrypoint;
-  environment;
-  local;
-  outputType;
-  securityOpt;
-  volumes;
-  workingDirectory;
-
   constructor(props) {
     // Docker bundling
+    this._archive = undefined;
+    this.command = undefined;
+    this.environment = undefined;
+    this.local = undefined;
+    this.outputType = undefined;
+    this.securityOpt = undefined;
+    this.volumes = undefined;
+    this.workingDirectory = undefined;
     this.image = new cdk.DockerImage("noop");
     this.outputType = cdk.BundlingOutput.ARCHIVED;
     this.entrypoint = props.entry;
